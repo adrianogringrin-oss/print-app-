@@ -9,6 +9,8 @@ import os
 import sys
 import json
 import logging
+import ssl
+import urllib.request
 from pathlib import Path
 import tempfile
 
@@ -191,6 +193,14 @@ def main():
     
     logger.info("🤖 Бот запущен...")
     logger.info(f"🌐 Web App URL: {WEB_APP_URL}")
+    
+    # Удаляем вебхук через sync HTTP (без asyncio), чтобы не мешал long polling
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=true"
+        with urllib.request.urlopen(url, context=ssl.create_default_context(), timeout=10) as _:
+            logger.info("✓ deleteWebhook выполнен")
+    except Exception as e:
+        logger.warning("deleteWebhook: %s", e)
     
     # Создаем приложение
     application = Application.builder().token(BOT_TOKEN).build()
