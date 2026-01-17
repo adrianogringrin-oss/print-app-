@@ -9,7 +9,6 @@ import os
 import sys
 import json
 import logging
-import asyncio
 from pathlib import Path
 import tempfile
 
@@ -191,13 +190,6 @@ def main():
     
     # Создаем приложение
     application = Application.builder().token(BOT_TOKEN).build()
-    
-    # Удаляем вебхук, если был установлен — иначе long polling не получит обновления
-    try:
-        asyncio.run(application.bot.delete_webhook(drop_pending_updates=True))
-        logger.info("✓ Вебхук удалён, long polling активен")
-    except Exception as e:
-        logger.warning("При удалении вебхука: %s", e)
     
     # Регистрируем обработчики
     application.add_handler(CommandHandler("start", start))
