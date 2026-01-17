@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Извлечение принтов</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Display", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-attachment: fixed;
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            color: #2d3748;
+            padding: 15px;
+            min-height: 100vh;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.5);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin: 15px 0 20px 0;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+        }
+        h2 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 20px 0 15px 0;
+            font-weight: 700;
+            font-size: 22px;
+        }
+        h3 {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .mode-selector label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+        .mode-selector label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .mode-selector label:hover::before {
+            left: 100%;
+        }
+        .mode-selector label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12), 0 0 0 1px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        .mode-selector input[type="radio"] {
+            margin: 0;
+        }
+        .mode-selector input[type="radio"]:checked + span {
+            font-weight: 700;
+            color: #667eea;
+        }
+        .mode-selector input[type="radio"]:checked ~ label,
+        .mode-selector label:has(input[type="radio"]:checked) {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25), 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        .ai-section {
+            margin: 20px 0;
+            padding: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .ai-section h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .ai-section p {
+            color: #4a5568;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            margin: 12px 0;
+            resize: vertical;
+            background: #ffffff;
+            color: #2d3748;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15), 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        textarea::placeholder {
+            color: #a0aec0;
+        }
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 17px;
+            width: 100%;
+            margin: 12px 0;
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+        }
+        .button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .button:active::before {
+            width: 400px;
+            height: 400px;
+        }
+        .button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .button:hover::after {
+            left: 100%;
+        }
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45), 0 0 0 1px rgba(255,255,255,0.2) inset;
+        }
+        .button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .button.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            box-shadow: 0 8px 24px rgba(17, 153, 142, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+        }
+        .button.success:hover {
+            box-shadow: 0 12px 32px rgba(17, 153, 142, 0.45), 0 0 0 1px rgba(255,255,255,0.2) inset;
+        }
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 20px;
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
+            touch-action: none;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(102, 126, 234, 0.1);
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+        canvas:hover {
+            box-shadow: 0 16px 50px rgba(0,0,0,0.2), 0 0 0 1px rgba(102, 126, 234, 0.2);
+        }
+        .status {
+            text-align: center;
+            padding: 14px 18px;
+            margin: 12px 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+            font-weight: 600;
+            color: #2d3748;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .result-container {
+            margin-top: 24px;
+            padding: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(56, 239, 125, 0.2);
+        }
+        #resultCanvas {
+            border: 3px solid #38ef7d;
+            box-shadow: 0 12px 40px rgba(56, 239, 125, 0.25), 0 0 0 1px rgba(56, 239, 125, 0.1);
+        }
+        .upload-section {
+            margin: 20px 0;
+            padding: 28px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .upload-section h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 18px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .file-input-label {
+            display: block;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 17px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+        }
+        .file-input-label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .file-input-label:hover::before {
+            left: 100%;
+        }
+        .file-input-label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45), 0 0 0 1px rgba(255,255,255,0.2) inset;
+        }
+        .file-input-label:active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Извлечение принтов</h1>
+        
+        <div id="uploadSection" class="upload-section">
+            <h3>📸 Загрузите изображение</h3>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
+                <label for="fileInput" class="file-input-label">📁 Выбрать файл</label>
+            </div>
+            <div id="uploadStatus" class="status" style="display:none;"></div>
+        </div>
+        
+        <div class="mode-selector" id="modeSelector" style="display:none;">
+            <label>
+                <input type="radio" name="method" value="manual" checked>
+                <span>🖱️ Ручной выбор</span>
+            </label>
+            <label>
+                <input type="radio" name="method" value="ai" id="aiMethodRadio">
+                <span>🤖 ИИ по описанию</span>
+            </label>
+        </div>
+        
+        <div id="aiSection" class="ai-section" style="display:none;">
+            <h3>🤖 ИИ извлечение</h3>
+            <p>Опишите что нужно извлечь:</p>
+            <textarea id="aiPrompt" placeholder="Например: 'извлеки весь текст', 'извлеки автомобиль', 'извлеки логотип'"></textarea>
+            <button class="button success" onclick="extractWithAI()">🔍 ИИ: Извлечь</button>
+            <div id="aiStatus" class="status"></div>
+        </div>
+        
+        <div id="imageContainer">
+            <canvas id="imageCanvas"></canvas>
+            <button class="button" id="extractBtn" onclick="extractRegion()" style="display:none;">
+                🔍 Извлечь принт
+            </button>
+        </div>
+        
+        <div id="resultContainer" class="result-container" style="display:none;">
+            <h2>Результат:</h2>
+            <canvas id="resultCanvas"></canvas>
+            <button class="button success" onclick="downloadResult()">💾 Скачать PNG</button>
+        </div>
+        
+        <div id="status" class="status"></div>
+    </div>
+    
+    <script>
+        // Перехватываем fetch для добавления заголовка ngrok и кастомного User-Agent
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (!options.headers) options.headers = {};
+            options.headers['ngrok-skip-browser-warning'] = 'true';
+            // Кастомный User-Agent для обхода ngrok warning на мобильных
+            options.headers['User-Agent'] = 'TelegramBot/1.0 (Custom)';
+            // Также добавляем в заголовки запроса
+            if (typeof url === 'string' && url.includes('ngrok')) {
+                options.headers['ngrok-skip-browser-warning'] = 'true';
+            }
+            return originalFetch(url, options);
+        };
+        
+        // Устанавливаем кастомный User-Agent для всех XMLHttpRequest
+        const originalOpen = XMLHttpRequest.prototype.open;
+        const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+        XMLHttpRequest.prototype.open = function(method, url, ...args) {
+            this.addEventListener('loadstart', function() {
+                try {
+                    this.setRequestHeader('ngrok-skip-browser-warning', 'true');
+                    this.setRequestHeader('User-Agent', 'TelegramBot/1.0 (Custom)');
+                } catch(e) {}
+            });
+            return originalOpen.apply(this, [method, url, ...args]);
+        };
+        
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Устанавливаем кастомный User-Agent в meta тег для мобильных
+        const meta = document.createElement('meta');
+        meta.name = 'user-agent';
+        meta.content = 'TelegramBot/1.0 (Custom)';
+        document.head.appendChild(meta);
+        
+        // Переопределяем navigator.userAgent для обхода ngrok warning
+        Object.defineProperty(navigator, 'userAgent', {
+            get: function() { return 'TelegramBot/1.0 (Custom)'; },
+            configurable: true
+        });
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id') || 'web_' + Date.now();
+        
+        let image = null;
+        let canvas = document.getElementById('imageCanvas');
+        let ctx = canvas.getContext('2d');
+        let scale = 1;
+        let selection = {x1: 0, y1: 0, x2: 0, y2: 0};
+        let isDrawing = false;
+        let startX, startY;
+        
+        // Пытаемся загрузить изображение из бота (если есть user_id от бота)
+        if (userId && !userId.startsWith('web_')) {
+            fetch(`/get_image?user_id=${userId}`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true',
+                    'User-Agent': 'TelegramBot/1.0 (Custom)'
+                }
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadImageFromData(data.data);
+                        document.getElementById('uploadSection').style.display = 'none';
+                    } else {
+                        // Изображение не найдено в боте, показываем форму загрузки
+                        document.getElementById('uploadSection').style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    // Ошибка загрузки, показываем форму загрузки
+                    document.getElementById('uploadSection').style.display = 'block';
+                });
+        } else {
+            // Нет user_id от бота, показываем форму загрузки
+            document.getElementById('uploadSection').style.display = 'block';
+        }
+        
+        function loadImageFromData(imageData) {
+            image = new Image();
+            image.src = 'data:image/png;base64,' + imageData;
+            image.onload = function() {
+                const maxWidth = window.innerWidth - 40;
+                const maxHeight = window.innerHeight * 0.5;
+                scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+                
+                canvas.width = image.width * scale;
+                canvas.height = image.height * scale;
+                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                
+                document.getElementById('extractBtn').style.display = 'block';
+                document.getElementById('modeSelector').style.display = 'flex';
+                setupCanvasEvents();
+            };
+        }
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                document.getElementById('uploadStatus').textContent = '❌ Пожалуйста, выберите изображение';
+                document.getElementById('uploadStatus').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('uploadStatus').textContent = '⏳ Загрузка...';
+            document.getElementById('uploadStatus').style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('user_id', userId);
+            
+            fetch('/upload_image', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'ngrok-skip-browser-warning': 'true',
+                    'User-Agent': 'TelegramBot/1.0 (Custom)'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('uploadStatus').textContent = '✅ Изображение загружено!';
+                    document.getElementById('uploadSection').style.display = 'none';
+                    loadImageFromData(data.data);
+                } else {
+                    document.getElementById('uploadStatus').textContent = '❌ Ошибка: ' + (data.error || 'Не удалось загрузить');
+                }
+            })
+            .catch(err => {
+                document.getElementById('uploadStatus').textContent = '❌ Ошибка: ' + err.message;
+            });
+        }
+        
+        document.querySelectorAll('input[name="method"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('aiSection').style.display = 
+                    this.value === 'ai' ? 'block' : 'none';
+            });
+        });
+        
+        function setupCanvasEvents() {
+            ['mousedown', 'touchstart'].forEach(eventType => {
+                canvas.addEventListener(eventType, function(e) {
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    
+                    startX = (clientX - rect.left) / scale;
+                    startY = (clientY - rect.top) / scale;
+                    isDrawing = true;
+                });
+            });
+            
+            ['mousemove', 'touchmove'].forEach(eventType => {
+                canvas.addEventListener(eventType, function(e) {
+                    if (!isDrawing) return;
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    
+                    const currentX = (clientX - rect.left) / scale;
+                    const currentY = (clientY - rect.top) / scale;
+                    
+                    selection.x1 = Math.round(Math.min(startX, currentX));
+                    selection.y1 = Math.round(Math.min(startY, currentY));
+                    selection.x2 = Math.round(Math.max(startX, currentX));
+                    selection.y2 = Math.round(Math.max(startY, currentY));
+                    
+                    drawSelection();
+                });
+            });
+            
+            ['mouseup', 'touchend'].forEach(eventType => {
+                canvas.addEventListener(eventType, function(e) {
+                    isDrawing = false;
+                });
+            });
+        }
+        
+        function drawSelection() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            
+            if (selection.x2 > selection.x1 && selection.y2 > selection.y1) {
+                ctx.strokeStyle = '#FF0000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    selection.x1 * scale,
+                    selection.y1 * scale,
+                    (selection.x2 - selection.x1) * scale,
+                    (selection.y2 - selection.y1) * scale
+                );
+            }
+        }
+        
+        function extractRegion() {
+            if (!image || selection.x2 <= selection.x1 || selection.y2 <= selection.y1) {
+                tg.showAlert('Сначала выделите область!');
+                return;
+            }
+            
+            extractAndProcess(selection);
+        }
+        
+        function extractWithAI() {
+            const prompt = document.getElementById('aiPrompt').value.trim();
+            if (!prompt) {
+                tg.showAlert('Введите описание!');
+                return;
+            }
+            
+            document.getElementById('aiStatus').textContent = '⏳ ИИ анализирует...';
+            
+            fetch('/extract_ai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true',
+                    'User-Agent': 'TelegramBot/1.0 (Custom)'
+                },
+                body: JSON.stringify({prompt: prompt, user_id: userId})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.coords) {
+                    document.getElementById('aiStatus').textContent = '✓ Область определена';
+                    setTimeout(() => extractAndProcess(data.coords), 500);
+                } else {
+                    document.getElementById('aiStatus').textContent = '❌ Ошибка: ' + (data.error || 'Не удалось определить');
+                }
+            })
+            .catch(err => {
+                document.getElementById('aiStatus').textContent = '❌ Ошибка: ' + err.message;
+            });
+        }
+        
+        function extractAndProcess(coords) {
+            document.getElementById('status').textContent = '⏳ Обработка...';
+            
+            fetch('/extract', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true',
+                    'User-Agent': 'TelegramBot/1.0 (Custom)'
+                },
+                body: JSON.stringify({...coords, user_id: userId})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const resultCanvas = document.getElementById('resultCanvas');
+                    const resultCtx = resultCanvas.getContext('2d');
+                    const resultImg = new Image();
+                    resultImg.src = 'data:image/png;base64,' + data.data;
+                    resultImg.onload = function() {
+                        resultCanvas.width = resultImg.width;
+                        resultCanvas.height = resultImg.height;
+                        resultCtx.drawImage(resultImg, 0, 0);
+                        document.getElementById('resultContainer').style.display = 'block';
+                        document.getElementById('status').textContent = 
+                            '✓ Готово! Размер: ' + data.width + ' x ' + data.height;
+                    };
+                } else {
+                    tg.showAlert('Ошибка: ' + data.error);
+                }
+            })
+            .catch(err => {
+                tg.showAlert('Ошибка: ' + err.message);
+            });
+        }
+        
+        function downloadResult() {
+            const resultCanvas = document.getElementById('resultCanvas');
+            if (!resultCanvas) {
+                tg.showAlert('Результат не готов');
+                return;
+            }
+            
+            // Показываем статус
+            document.getElementById('status').textContent = '⏳ Подготовка файла...';
+            
+            // ВАЖНО: Используем прямой URL с сервера вместо blob URL
+            // Это работает на всех платформах, включая мобильные
+            const downloadUrl = `/result?user_id=${userId}`;
+            
+            // Определяем платформу
+            const isMobile = tg && tg.platform && (tg.platform === 'ios' || tg.platform === 'android');
+            
+            if (isMobile) {
+                // На мобильных используем прямой переход по ссылке
+                // Сервер настроен на отдачу файла с заголовком Content-Disposition: attachment
+                window.location.href = downloadUrl;
+                
+                // Показываем сообщение через небольшую задержку
+                setTimeout(() => {
+                    document.getElementById('status').textContent = '✅ Файл скачан в галерею!';
+                    tg.showAlert('✅ Файл скачан в галерею!');
+                }, 1000);
+            } else {
+                // На десктопе создаем ссылку для скачивания
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = 'print_result.png';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    document.getElementById('status').textContent = '✅ Файл скачан!';
+                    tg.showAlert('✅ Файл скачан!');
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

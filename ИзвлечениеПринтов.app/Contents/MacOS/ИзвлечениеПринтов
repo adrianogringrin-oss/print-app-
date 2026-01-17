@@ -1,0 +1,78 @@
+#!/bin/bash
+# Скрипт запуска приложения с обработкой ошибок
+
+# Получаем путь к .app
+APP_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+RESOURCES_DIR="$APP_DIR/Contents/Resources"
+
+# Переходим в папку Resources
+cd "$RESOURCES_DIR" || {
+    osascript -e 'display dialog "Ошибка: не удалось найти файлы приложения!" buttons {"OK"} default button "OK" with icon stop' 2>/dev/null
+    exit 1
+}
+
+# Используем СИСТЕМНЫЙ Python (всегда работает с tkinter)
+PYTHON_CMD="/usr/bin/python3"
+
+# Проверяем наличие системного Python
+if [ ! -f "$PYTHON_CMD" ]; then
+    osascript -e 'display dialog "Ошибка: системный Python не найден!\n\nmacOS должен иметь Python 3 по умолчанию." buttons {"OK"} default button "OK" with icon stop' 2>/dev/null
+    exit 1
+fi
+
+# Проверяем tkinter в системном Python
+"$PYTHON_CMD" -c "import tkinter" 2>/dev/null
+if [ $? -ne 0 ]; then
+    osascript -e 'display dialog "Ошибка: tkinter не найден в системном Python!\n\nПопробуйте использовать консольную версию программы." buttons {"OK"} default button "OK" with icon stop' 2>/dev/null
+    exit 1
+fi
+
+# Проверяем наличие скрипта
+if [ ! -f "$RESOURCES_DIR/GUI_РАБОТАЮЩАЯ.py" ]; then
+    osascript -e 'display dialog "Ошибка: файл программы не найден!\n\nПроверьте установку приложения." buttons {"OK"} default button "OK" with icon stop' 2>/dev/null
+    exit 1
+fi
+
+# Проверяем зависимости
+"$PYTHON_CMD" -c "from PIL import Image" 2>/dev/null
+if [ $? -ne 0 ]; then
+    # Устанавливаем Pillow для системного Python
+    osascript -e 'display dialog "Установка Pillow для системного Python..." buttons {"OK"} default button "OK"' 2>/dev/null
+    "$PYTHON_CMD" -m pip install --user Pillow 2>&1 | tail -5
+fi
+
+# ВАЖНО: Полностью очищаем окружение Python
+# Удаляем все переменные, которые могут указывать на Homebrew Python
+unset PYTHONPATH
+unset PYTHONHOME
+export PYTHONPATH=""
+export PYTHONHOME=""
+
+# Убеждаемся, что используем системный Python и его модули
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+# Запускаем приложение
+# Перенаправляем ошибки в лог для отладки
+ERROR_LOG="$HOME/Desktop/gui_app_errors.log"
+echo "=== Запуск GUI приложения $(date) ===" >> "$ERROR_LOG"
+echo "Python: $PYTHON_CMD" >> "$ERROR_LOG"
+echo "PYTHONPATH: $PYTHONPATH" >> "$ERROR_LOG"
+echo "PATH: $PATH" >> "$ERROR_LOG"
+
+# Запускаем с очищенным окружением
+# Используем env -i для полной изоляции от Homebrew Python
+env -i \
+    PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+    HOME="$HOME" \
+    USER="$USER" \
+    SHELL="$SHELL" \
+    "$PYTHON_CMD" "GUI_РАБОТАЮЩАЯ.py" 2>> "$ERROR_LOG"
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    # Если ошибка, показываем сообщение
+    osascript -e "display dialog \"Приложение завершилось с ошибкой (код: $EXIT_CODE).\n\nПодробности в логе:\n$ERROR_LOG\" buttons {\"OK\"} default button \"OK\" with icon caution" 2>/dev/null
+fi
+
+exit $EXIT_CODE
