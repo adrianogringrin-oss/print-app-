@@ -19,14 +19,11 @@ from collections import Counter
 # Импорты без macOS-специфичных путей
 from PIL import Image, ImageFilter, ImageChops
 
-# Импортируем функции из бота для доступа к сессиям
-try:
-    from TELEGRAM_BOT_SERVER import get_user_image, user_sessions
-except ImportError:
-    # Если не импортируется, создаем локальное хранилище
-    user_sessions = {}
-    def get_user_image(user_id):
-        return user_sessions.get(user_id)
+# Локальное хранилище сессий (бот и веб-сервер в разных контейнерах Railway — общая память недоступна).
+# Импорт TELEGRAM_BOT_SERVER убран: он тянет python-telegram-bot и мог вызывать 502 при старте.
+user_sessions = {}
+def get_user_image(user_id):
+    return user_sessions.get(user_id)
 
 # Проверяем наличие OpenAI
 HAS_OPENAI = False

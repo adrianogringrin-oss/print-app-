@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements_telegram.txt .
 RUN pip install --no-cache-dir -r requirements_telegram.txt
 
-# Копирование кода приложения (используем серверные версии без macOS-зависимостей)
-COPY TELEGRAM_BOT_SERVER.py TELEGRAM_BOT.py
-COPY TELEGRAM_WEBAPP_SERVER.py TELEGRAM_WEBAPP.py
+# Копирование кода приложения (имена файлов должны совпадать с railway.json startCommand)
+COPY TELEGRAM_BOT_SERVER.py .
+COPY TELEGRAM_WEBAPP_SERVER.py .
 
 # Создание директории для временных файлов
 RUN mkdir -p /app/temp && chmod 777 /app/temp
@@ -31,6 +31,5 @@ ENV PORT=8080
 # Открываем порт
 EXPOSE 8080
 
-# Команда запуска (запускаем оба сервиса через supervisor или отдельные контейнеры)
-# Для простоты запускаем веб-сервер, бот будет запускаться отдельно
-CMD ["python", "TELEGRAM_WEBAPP.py"]
+# CMD переопределяется railway.json startCommand (раздельный запуск webapp/bot по SERVICE_TYPE)
+CMD ["python", "TELEGRAM_WEBAPP_SERVER.py"]
