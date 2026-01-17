@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import logging
+import asyncio
 from pathlib import Path
 import tempfile
 
@@ -43,6 +44,7 @@ temp_dir.mkdir(exist_ok=True)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда /start"""
+    logger.info("Команда /start от user_id=%s", update.effective_user.id if update.effective_user else "?")
     keyboard = [
         [InlineKeyboardButton(
             "🎨 Открыть приложение",
@@ -169,6 +171,11 @@ def get_user_image(user_id):
     return user_sessions.get(user_id)
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Логирование ошибок при обработке обновлений"""
+    logger.exception("Ошибка при обработке обновления: %s", context.error)
+
+
 def main():
     """Главная функция"""
     if not BOT_TOKEN:
@@ -185,11 +192,19 @@ def main():
     # Создаем приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
+    # Удаляем вебхук, если был установлен — иначе long polling не получит обновления
+    try:
+        asyncio.run(application.bot.delete_webhook(drop_pending_updates=True))
+        logger.info("✓ Вебхук удалён, long polling активен")
+    except Exception as e:
+        logger.warning("При удалении вебхука: %s", e)
+    
     # Регистрируем обработчики
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.Document.IMAGE, handle_document))
+    application.add_error_handler(error_handler)
     
     # Запускаем бота
     application.run_polling(allowed_updates=Update.ALL_TYPES)
