@@ -495,7 +495,110 @@ TELEGRAM_HTML_TEMPLATE = '''<!DOCTYPE html>
             font-size: 28px;
             font-weight: 800;
             letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
         }
+        h2 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 20px 0 15px 0;
+            font-weight: 700;
+            font-size: 22px;
+        }
+        h3 {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .mode-selector label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+        .mode-selector label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .mode-selector label:hover::before { left: 100%; }
+        .mode-selector label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12), 0 0 0 1px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        .mode-selector input[type="radio"] { margin: 0; }
+        .mode-selector input[type="radio"]:checked + span { font-weight: 700; color: #667eea; }
+        .mode-selector label:has(input[type="radio"]:checked) {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25), 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        .ai-section {
+            margin: 20px 0;
+            padding: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .ai-section h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .ai-section p {
+            color: #4a5568;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            margin: 12px 0;
+            resize: vertical;
+            background: #ffffff;
+            color: #2d3748;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15), 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        textarea::placeholder { color: #a0aec0; }
         .button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #ffffff;
@@ -507,20 +610,31 @@ TELEGRAM_HTML_TEMPLATE = '''<!DOCTYPE html>
             width: 100%;
             margin: 12px 0;
             font-weight: 700;
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
         }
-        .button:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45); }
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45), 0 0 0 1px rgba(255,255,255,0.2) inset;
+        }
         .button.success {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            box-shadow: 0 8px 24px rgba(17, 153, 142, 0.35);
+            box-shadow: 0 8px 24px rgba(17, 153, 142, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
         }
+        .button.success:hover { box-shadow: 0 12px 32px rgba(17, 153, 142, 0.45), 0 0 0 1px rgba(255,255,255,0.2) inset; }
         canvas {
             border: 3px solid #667eea;
             border-radius: 20px;
             display: block;
             margin: 20px auto;
             max-width: 100%;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            touch-action: none;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(102, 126, 234, 0.1);
+            background: #fff;
+            transition: all 0.3s ease;
         }
         .status {
             text-align: center;
@@ -528,8 +642,22 @@ TELEGRAM_HTML_TEMPLATE = '''<!DOCTYPE html>
             margin: 12px 0;
             border-radius: 14px;
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
             font-weight: 600;
+            color: #2d3748;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .result-container {
+            margin-top: 24px;
+            padding: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(56, 239, 125, 0.2);
+        }
+        #resultCanvas {
+            border: 3px solid #38ef7d;
+            box-shadow: 0 12px 40px rgba(56, 239, 125, 0.25), 0 0 0 1px rgba(56, 239, 125, 0.1);
         }
         .upload-section {
             margin: 20px 0;
@@ -537,7 +665,22 @@ TELEGRAM_HTML_TEMPLATE = '''<!DOCTYPE html>
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             border-radius: 20px;
             text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .upload-section h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 18px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
         }
         .file-input-wrapper input[type="file"] {
             position: absolute;
@@ -554,7 +697,14 @@ TELEGRAM_HTML_TEMPLATE = '''<!DOCTYPE html>
             border-radius: 16px;
             cursor: pointer;
             font-weight: 700;
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+            font-size: 17px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+        }
+        .file-input-label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45), 0 0 0 1px rgba(255,255,255,0.2) inset;
         }
     </style>
 </head>
@@ -570,8 +720,14 @@ TELEGRAM_HTML_TEMPLATE = '''<!DOCTYPE html>
             <div id="uploadStatus" class="status" style="display:none;"></div>
         </div>
         <div class="mode-selector" id="modeSelector" style="display:none;">
-            <label><input type="radio" name="method" value="manual" checked> <span>🖱️ Ручной выбор</span></label>
-            <label><input type="radio" name="method" value="ai" id="aiMethodRadio"> <span>🤖 ИИ по описанию</span></label>
+            <label>
+                <input type="radio" name="method" value="manual" checked>
+                <span>🖱️ Ручной выбор</span>
+            </label>
+            <label>
+                <input type="radio" name="method" value="ai" id="aiMethodRadio">
+                <span>🤖 ИИ по описанию</span>
+            </label>
         </div>
         <div id="aiSection" class="ai-section" style="display:none;">
             <h3>🤖 ИИ извлечение</h3>
