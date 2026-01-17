@@ -38,6 +38,9 @@ BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 # Очистка от пробелов и невидимых символов — Telegram даёт "unsupported url protocol" при лишних символах
 _raw = (os.environ.get('WEB_APP_URL') or 'http://localhost:8080').strip()
 WEB_APP_URL = ''.join(_raw.split())
+# Публичный URL бота (без / в конце). Если задан — бот работает в режиме webhook (нет 409 Conflict).
+BOT_PUBLIC_URL = ''.join((os.environ.get('BOT_PUBLIC_URL') or '').strip().split()).rstrip('/')
+PORT = int(os.environ.get('PORT', 8080))
 
 # Глобальное хранилище (в продакшене используйте Redis или БД)
 user_sessions = {}
@@ -194,14 +197,6 @@ def main():
     logger.info("🤖 Бот запущен...")
     logger.info(f"🌐 Web App URL: {WEB_APP_URL}")
     
-    # Удаляем вебхук через sync HTTP (без asyncio), чтобы не мешал long polling
-    try:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=true"
-        with urllib.request.urlopen(url, context=ssl.create_default_context(), timeout=10) as _:
-            logger.info("✓ deleteWebhook выполнен")
-    except Exception as e:
-        logger.warning("deleteWebhook: %s", e)
-    
     # Создаем приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
@@ -212,8 +207,28 @@ def main():
     application.add_handler(MessageHandler(filters.Document.IMAGE, handle_document))
     application.add_error_handler(error_handler)
     
-    # Запускаем бота
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Webhook — нет 409 Conflict при нескольких репликах/процессах. Long polling — только если BOT_PUBLIC_URL не задан.
+    if BOT_PUBLIC_URL:
+        webhook_url = f"{BOT_PUBLIC_URL}/webhook"
+        logger.info("📡 Режим WEBHOOK: %s (порт %s)", webhook_url, PORT)
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path="webhook",
+            webhook_url=webhook_url,
+            drop_pending_updates=True,
+            allowed_updates=Update.ALL_TYPES,
+        )
+    else:
+        # Удаляем вебхук через sync HTTP, чтобы long polling не конфликтовал со старым webhook
+        try:
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=true"
+            with urllib.request.urlopen(url, context=ssl.create_default_context(), timeout=10) as _:
+                logger.info("✓ deleteWebhook выполнен")
+        except Exception as e:
+            logger.warning("deleteWebhook: %s", e)
+        logger.info("📡 Режим LONG POLLING (задайте BOT_PUBLIC_URL для webhook и избавления от 409)")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == "__main__":
