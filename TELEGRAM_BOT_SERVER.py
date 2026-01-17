@@ -33,7 +33,9 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация
 BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-WEB_APP_URL = os.environ.get('WEB_APP_URL', 'http://localhost:8080')
+# Очистка от пробелов и невидимых символов — Telegram даёт "unsupported url protocol" при лишних символах
+_raw = (os.environ.get('WEB_APP_URL') or 'http://localhost:8080').strip()
+WEB_APP_URL = ''.join(_raw.split())
 
 # Глобальное хранилище (в продакшене используйте Redis или БД)
 user_sessions = {}
